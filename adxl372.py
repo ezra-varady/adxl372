@@ -87,7 +87,7 @@ class ADXL372:
         self.dev.max_speed_hz = 10**7
         self.dev.open(major, minor)
 
-        # Registers start out zerod
+        # Registers start out zeroed except when otherwise stated
         self.op_mode = OP_MODES.FULL_BW_MEASUREMENT
         self.odr = ODR.ODR_400Hz
         self.bw = BW.BW_200Hz
@@ -98,6 +98,9 @@ class ADXL372:
         self.instant_on_thresh = InstantOnThresh.ADXL_INSTAON_LOW_THRESH
         self.act_time_ms = 6.6
         self.inact_time_ms = 26
+        self.fifo_samples = 0x80 # This is the default register value
+        self.fifo_mode = FIFOMode.XYZ_FIFO
+        self.fifo_format = FIFOFormat.BYPASSED
 
     def read(self, reg, nbytes=1):
         reg = reg << 1 | ADXL_SPI_RNW
@@ -411,7 +414,7 @@ class ADXL372:
         data = self.read(ADI_ADXL372_X_DATA_H, 6)
         return self.process_sample(data)
 
-    def get_fifo_entries(self):
+    def get_fifo_entries(self) -> int:
         '''
         Returns the number of samples currently available in the FIFO.
         The 2 MSB are stored in FIFO_ENTRIES_2, the 8 LSB in FIFO_ENTRIES_1
@@ -421,10 +424,43 @@ class ADXL372:
         ret_val = (data[0] << 8) | data[1]
         return ret_val
 
-    def configure_fifo(self):
+    def configure_fifo(self,
+            samples: int,
+            mode: FIFOMode,
+            qformat: FIFOFormat): #TODO: think of a better name
+        '''
+        Configure the internal FIFO queue. This function simultaneously sets the 
+        number of samples up to 512, the format of the samples (x-y-z, z, x-z, etc),
+        and the mode the FIFO operates in. Note that for 3-axis and impact peak 
+        the samples can be set to a max of 170, and for 2-axis a max of 256. The 
+        512 sample maximum is only for single axis measurements. There are several
+        modes, in BYPASS the FIFO is disabled, in OLDEST_SAVED the FIFO will store 
+        the first N samples, and must be disabled and reenabled to collect a new set,
+        in STREAMED mode it essentially acts like a buffer, holding the last N, and
+        in TRIGGERED it acts like stream mode till an event, after which it stores 
+        the samples around the event
+
+        samples: The number of samples stored, should be informed by the format arg
+        mode: The mode the FIFO will operate in, 
+        qformat: The format that samples should be stored in, chooses axes to be sampled
+        '''
+        # FIFO must be configured in standby
         self.set_op_mode(OP_MODES.STAND_BY)
 
-        
+        if samples > 512 or samples < 0:
+            samples = 512
+        # You have to leave 1 sample in the FIFO queue when you read
+        samples -= 1
+
+        samples_msb = int(samples > 0xFF)
+        config = (mode << FIFO_CRL_MODE_POS) | (qformat << FIFO_CRL_FORMAT_POS) | (samples_MSB << FIFO_CRL_SAMP8_POS)
+
+        self.write(ADI_ADXL372_FIFO_SAMPLES, samples & 0xFF)
+        self.write(ADI_ADXL372_FIFO_CTL, config)
+
+        self.fifo_samples = samples + 1
+        self.fifo_mode = mode
+        self.fifo_format = qformat
 
         self.set_op_mode(OP_MODES.FULL_BW_MEASUREMENT)
 

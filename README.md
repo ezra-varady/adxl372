@@ -1,4 +1,5 @@
-Python interface for adxl372 accelerometer. Currently incomplete, but fairly useable. An alternative for the existing IIO driver because I find the interface confusing, and I imagine other people do too.
+Python interface for adxl372 accelerometer. An alternative for the existing IIO driver because I find the interface confusing, and I imagine other people do too. Missing a few things documented below, but largely useable.
+
 ### Example
 ```
 if __name__ == '__main__':
@@ -16,4 +17,8 @@ if __name__ == '__main__':
  
  if you wish to scale the data the scale factor is calculated at the bottom of defs.py as ADXL372_SCALE
 # TODO
-Add support for trim registers and FIFO configuration
+- [x] FIFO support
+- [ ] Trim Registers
+- [ ] Interrupt Handling 
+
+
