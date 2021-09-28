@@ -13,6 +13,12 @@ if __name__ == '__main__':
     dev.set_op_mode(OP_MODES.FULL_BW_MEASUREMENT)
     print(dev.get_dev_id())
     print(dev.get_accel_data())
+    print(ADXL372_SCALEG * dev.get_accel_data())
+    datum = dev.get_accel_data()
+    datum.x = datum.x * ADXL372_SCALEG
+    datum.y = datum.y * ADXL372_SCALEG
+    datum.z = datum.z * ADXL372_SCALEG
+    print(datum)
  ```
  
  if you wish to scale the data the scale factor is calculated at the bottom of defs.py as ADXL372_SCALE

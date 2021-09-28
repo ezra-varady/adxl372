@@ -102,5 +102,6 @@ ADXL_INT2_PIN   = 5
 ADXL_SPI_RNW    = 1
 
 # + or - 200g with 12-bit resolution
-# (200 + 200) * 9.81 / (2^12 - 1) = 0.958241
+# (200 + 200) * 9.81 / (2^12 - 1) = 0.958241 m/s^2 per lsb
 ADXL372_SCALE = 0.958241
+ADXL372_SCALEG = 0.09768 # g per lsb

@@ -80,6 +80,17 @@ class Sample:
     x: int
     y: int
     z: int
+    
+    # support multiplying by some scalar 
+    def __mul__(self, other: float):
+        rval = Sample(0,0,0)
+        rval.x = self.x * other
+        rval.y = self.y * other
+        rval.z = self.z * other
+        return rval
+
+    __rmul__ = __mul__
+
 
 class ADXL372:
     def __init__(self, major, minor):
@@ -480,10 +491,18 @@ if __name__ == '__main__':
     dev.set_ODR(ODR.ODR_6400Hz)
     dev.set_op_mode(OP_MODES.FULL_BW_MEASUREMENT)
     print(dev.get_dev_id())
-    print(dev.get_accel_data())
+    # print in units of the standard gravity
+    # for m/s^2 use ADXL372_SCALE instead
+    print(ADXL372_SCALEG * dev.get_accel_data())
     sleep(1)
-    print(dev.get_accel_data())
+    print(ADXL372_SCALEG * dev.get_accel_data())
     sleep(1)
-    print(dev.get_accel_data())
+    print(ADXL372_SCALEG * dev.get_accel_data())
     sleep(1)
-    print(dev.get_accel_data())
+    print(ADXL372_SCALEG * dev.get_accel_data())
+    sleep(1)
+    datum = dev.get_accel_data()
+    datum.x = datum.x * ADXL372_SCALEG
+    datum.y = datum.y * ADXL372_SCALEG
+    datum.z = datum.z * ADXL372_SCALEG
+    print(datum)
